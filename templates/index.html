@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carpenter Workshop AI</title>
+    <style>
+        :root {
+            --bg: #f4eee6;
+            --panel: rgba(255, 252, 247, 0.92);
+            --ink: #2d2118;
+            --muted: #796b60;
+            --wood: #8b4f2c;
+            --wood-dark: #60351f;
+            --line: #e6d8c9;
+            --user: #ead3bd;
+            --assistant: #fffaf3;
+            --shadow: 0 24px 70px rgba(74, 46, 26, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 15% 15%, rgba(173, 112, 67, 0.20), transparent 28%),
+                radial-gradient(circle at 85% 80%, rgba(96, 53, 31, 0.13), transparent 30%),
+                var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .app {
+            width: min(1080px, 100%);
+            height: min(780px, calc(100vh - 48px));
+            min-height: 620px;
+            display: grid;
+            grid-template-columns: 310px 1fr;
+            overflow: hidden;
+            border: 1px solid rgba(96, 53, 31, 0.12);
+            border-radius: 28px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .sidebar {
+            padding: 34px 28px;
+            background: linear-gradient(160deg, #4e2d1e 0%, #754329 55%, #9a5c35 100%);
+            color: #fffaf4;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::after {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 50%;
+            right: -110px;
+            bottom: -80px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+            display: grid;
+            place-items: center;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.16);
+            font-size: 25px;
+        }
+
+        .brand h1 {
+            font-size: 17px;
+            margin: 0;
+            letter-spacing: 0.2px;
+        }
+
+        .brand span {
+            display: block;
+            font-size: 12px;
+            margin-top: 4px;
+            color: rgba(255,255,255,0.68);
+        }
+
+        .intro {
+            position: relative;
+            z-index: 1;
+            margin-top: 70px;
+        }
+
+        .intro h2 {
+            margin: 0;
+            font-family: Georgia, serif;
+            font-size: 38px;
+            line-height: 1.02;
+            font-weight: 500;
+        }
+
+        .intro p {
+            color: rgba(255,255,255,0.75);
+            line-height: 1.65;
+            font-size: 14px;
+            margin: 18px 0 0;
+        }
+
+        .topics {
+            position: absolute;
+            left: 28px;
+            right: 28px;
+            bottom: 30px;
+            z-index: 1;
+        }
+
+        .topics-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 12px;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .chip {
+            font-size: 11px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .chat {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            background: rgba(255, 252, 247, 0.88);
+        }
+
+        .chat-header {
+            min-height: 82px;
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #5d9b65;
+            box-shadow: 0 0 0 5px rgba(93, 155, 101, 0.10);
+        }
+
+        .status strong {
+            font-size: 14px;
+        }
+
+        .status small {
+            display: block;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .clear-btn {
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 8px;
+        }
+
+        .clear-btn:hover {
+            color: var(--wood-dark);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 28px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 18px;
+            animation: rise 0.25s ease;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: min(720px, 84%);
+            padding: 14px 17px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+        }
+
+        .assistant .bubble {
+            background: var(--assistant);
+            border: 1px solid var(--line);
+            border-top-left-radius: 6px;
+        }
+
+        .user .bubble {
+            background: var(--user);
+            border: 1px solid #ddc2a7;
+            border-top-right-radius: 6px;
+        }
+
+        .welcome {
+            max-width: 650px;
+            margin: 30px auto;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 17px;
+            border-radius: 19px;
+            background: #efe0d0;
+            font-size: 27px;
+        }
+
+        .welcome h3 {
+            font-family: Georgia, serif;
+            font-size: 26px;
+            font-weight: 500;
+            margin: 0 0 9px;
+        }
+
+        .welcome p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .suggestion {
+            border: 1px solid var(--line);
+            background: #fffdf9;
+            color: var(--ink);
+            border-radius: 999px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .suggestion:hover {
+            border-color: #c8a487;
+            transform: translateY(-1px);
+        }
+
+        .composer-wrap {
+            padding: 15px 24px 22px;
+            border-top: 1px solid var(--line);
+        }
+
+        .composer {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            padding: 8px 8px 8px 15px;
+            border: 1px solid #d9c8b8;
+            border-radius: 20px;
+            background: #fffdf9;
+            box-shadow: 0 7px 25px rgba(73, 46, 28, 0.07);
+        }
+
+        textarea {
+            flex: 1;
+            resize: none;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--ink);
+            font: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 130px;
+            padding: 9px 2px;
+        }
+
+        textarea::placeholder {
+            color: #a49689;
+        }
+
+        .send-btn {
+            width: 43px;
+            height: 43px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--wood-dark);
+            color: white;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            text-align: center;
+            color: #a19488;
+            font-size: 10px;
+            margin: 8px 0 0;
+        }
+
+        .typing {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing i {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #8b7666;
+            animation: pulse 1s infinite;
+        }
+
+        .typing i:nth-child(2) { animation-delay: 0.15s; }
+        .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(7px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-2px); }
+        }
+
+        @media (max-width: 800px) {
+            body { padding: 0; }
+            .app {
+                width: 100%;
+                height: 100vh;
+                min-height: 100vh;
+                border-radius: 0;
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+            .chat-header {
+                padding: 17px 18px;
+            }
+            .messages {
+                padding: 24px 17px;
+            }
+            .composer-wrap {
+                padding: 12px 14px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">🪚</div>
+                <div>
+                    <h1>Carpenter Workshop</h1>
+                    <span>AI Workshop Assistant</span>
+                </div>
+            </div>
+
+            <div class="intro">
+                <h2>Built for<br>woodwork.</h2>
+                <p>
+                    Ask about furniture, wood types, measurements,
+                    tools, repairs, designs, and everyday workshop tasks.
+                </p>
+            </div>
+
+            <div class="topics">
+                <div class="topics-title">Knowledge areas</div>
+                <div class="chips">
+                    <span class="chip">Furniture</span>
+                    <span class="chip">Wood Types</span>
+                    <span class="chip">Measurements</span>
+                    <span class="chip">Tools</span>
+                    <span class="chip">Repair</span>
+                    <span class="chip">Design</span>
+                </div>
+            </div>
+        </aside>
+
+        <section class="chat">
+            <header class="chat-header">
+                <div class="status">
+                    <span class="dot"></span>
+                    <div>
+                        <strong>Workshop Assistant</strong>
+                        <small>Carpenter-workshop questions only</small>
+                    </div>
+                </div>
+                <button class="clear-btn" id="clearBtn" type="button">Clear chat</button>
+            </header>
+
+            <div class="messages" id="messages">
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">🪵</div>
+                    <h3>What are we building?</h3>
+                    <p>
+                        I can help with woodworking, furniture, tools,
+                        measurements, repairs, materials, and workshop design.
+                    </p>
+
+                    <div class="suggestions">
+                        <button class="suggestion">Which wood is good for a wardrobe?</button>
+                        <button class="suggestion">How do I measure a cabinet?</button>
+                        <button class="suggestion">What tools are needed for a table?</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="composer-wrap">
+                <form class="composer" id="chatForm">
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        maxlength="4000"
+                        placeholder="Ask a carpenter-workshop question..."
+                        aria-label="Message"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" type="submit" aria-label="Send">➤</button>
+                </form>
+                <div class="hint">Specialized for carpenter-workshop topics</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById("chatForm");
+        const input = document.getElementById("messageInput");
+        const messages = document.getElementById("messages");
+        const sendBtn = document.getElementById("sendBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const welcome = document.getElementById("welcome");
+
+        let history = [];
+
+        function addMessage(role, text) {
+            if (welcome) welcome.style.display = "none";
+
+            const wrapper = document.createElement("div");
+            wrapper.className = `message ${role}`;
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.textContent = text;
+
+            wrapper.appendChild(bubble);
+            messages.appendChild(wrapper);
+            messages.scrollTop = messages.scrollHeight;
+
+            return wrapper;
+        }
+
+        function addTyping() {
+            const wrapper = document.createElement("div");
+            wrapper.className = "message assistant";
+            wrapper.id = "typingMessage";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            const typing = document.createElement("span");
+            typing.className = "typing";
+            typing.innerHTML = "<i></i><i></i><i></i>";
+
+            bubble.appendChild(typing);
+            wrapper.appendChild(bubble);
+            messages.appendChild(wrapper);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function removeTyping() {
+            document.getElementById("typingMessage")?.remove();
+        }
+
+        async function sendMessage(text) {
+            const message = text.trim();
+            if (!message || sendBtn.disabled) return;
+
+            addMessage("user", message);
+            const previousHistory = [...history];
+
+            history.push({ role: "user", content: message });
+            sendBtn.disabled = true;
+            input.disabled = true;
+            addTyping();
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message,
+                        history: previousHistory
+                    })
+                });
+
+                const data = await response.json();
+                removeTyping();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Request failed.");
+                }
+
+                addMessage("assistant", data.answer);
+                history.push({ role: "assistant", content: data.answer });
+            } catch (error) {
+                removeTyping();
+                addMessage(
+                    "assistant",
+                    error.message || "Sorry, something went wrong. Please try again."
+                );
+            } finally {
+                sendBtn.disabled = false;
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const text = input.value;
+            input.value = "";
+            input.style.height = "auto";
+            sendMessage(text);
+        });
+
+        input.addEventListener("input", () => {
+            input.style.height = "auto";
+            input.style.height = Math.min(input.scrollHeight, 130) + "px";
+        });
+
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
+        document.querySelectorAll(".suggestion").forEach((button) => {
+            button.addEventListener("click", () => {
+                input.value = button.textContent;
+                input.dispatchEvent(new Event("input"));
+                input.focus();
+            });
+        });
+
+        clearBtn.addEventListener("click", () => {
+            history = [];
+            messages.innerHTML = "";
+            messages.appendChild(welcome);
+            welcome.style.display = "block";
+            input.focus();
+        });
+    </script>
+</body>
+</html>
